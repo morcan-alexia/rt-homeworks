@@ -37,14 +37,54 @@ public class AperiodicCommandTask implements Runnable {
 
     @Override
     public void run() {
-        // TODO 3: implementați taskul aperiodic:
-        //   - preluați comenzile din coadă: commands.take()
-        //   - separați numele comenzii de parametru: command.split(" ")
-        //   - executați comanda (periodic.setPeriodMs(...), sensor.reset() etc.)
-        //   - publicați confirmarea pe Config.statusTopic(deviceId)
-        //   - o comandă necunoscută sau un parametru invalid nu trebuie să
-        //     oprească taskul: publicați "ERROR <motiv>"
-        //
-        // Vezi exemplul exemple/01-taskuri/.../AperiodicTaskExample.java
+        try {
+            while (true) {
+                String command = commands.take();
+                String result = execute(command.trim());
+
+                String message = deviceId + ";" + System.currentTimeMillis() + ";" + result;
+                mqtt.publish(Config.statusTopic(deviceId), message);
+                System.out.println("      [aperiodic] " + command + " -> " + result);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+
+    private String execute(String command) {
+        String[] parts = command.split("\\s+");
+        String name = parts[0];
+        try {
+            switch (name) {
+                case "SET_INTERVAL":
+                    long ms = Long.parseLong(parts[1]);
+                    if (ms < 100) {
+                        return "ERROR SET_INTERVAL: minim 100 ms";
+                    }
+                    periodic.setPeriodMs(ms);
+                    return "OK SET_INTERVAL " + ms;
+
+                case "SET_THRESHOLD":
+                    double value = Double.parseDouble(parts[1]);
+                    periodic.setThreshold(value);
+                    return "OK SET_THRESHOLD " + value;
+
+                case "RESET":
+                    sensor.reset();
+                    return "OK RESET";
+
+                case "STATUS":
+                    return "OK STATUS interval=" + periodic.getPeriodMs()
+                            + " threshold=" + periodic.getThreshold();
+
+                default:
+                    return "ERROR comanda necunoscuta: " + name;
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return "ERROR " + name + ": lipseste parametrul";      // ex. "SET_INTERVAL" fără număr
+        } catch (NumberFormatException e) {
+            return "ERROR " + name + ": parametru invalid";        // ex. "SET_INTERVAL abc"
+        }
     }
 }
