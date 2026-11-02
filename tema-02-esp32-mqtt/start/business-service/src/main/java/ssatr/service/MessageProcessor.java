@@ -27,12 +27,43 @@ public class MessageProcessor implements Runnable {
 
     @Override
     public void run() {
-        // TODO 4: într-o buclă:
-        //   - preluați un mesaj: inbox.take()
-        //   - salvați mesajul în fișierul CSV: storage.append(kind, mesaj)
-        //     (CsvStorage este gata implementată)
-        //   - actualizați dashboard-ul, în funcție de kind
-        //   - alarmele și confirmările se afișează imediat în consolă
-        //   - un mesaj greșit (format invalid) nu trebuie să oprească thread-ul
+
+        try {
+            while (true) {
+                String message = inbox.take();
+                try {
+                    String[] f = message.split(";");
+                    String deviceId = f[0];
+
+                    switch (kind) {
+                        case "telemetry":
+                            double temperature = Double.parseDouble(f[2]);
+                            storage.append(kind, message);
+                            dashboard.updateTelemetry(deviceId, temperature);
+                            break;
+
+                        case "alarm":
+                            String temp = f[2];
+                            String threshold = f[3];
+                            storage.append(kind, message);
+                            dashboard.recordAlarm(deviceId);
+                            System.out.println("!!! ALARMĂ " + deviceId + ": " + temp + " > prag " + threshold);
+                            break;
+
+                        case "status":
+                            String text = f[2];
+                            storage.append(kind, message);
+                            dashboard.updateStatus(deviceId);
+                            System.out.println(">>> " + deviceId + ": " + text);
+                            break;
+                    }
+                } catch (RuntimeException e) {
+
+                    System.out.println("[" + kind + "] mesaj ignorat: " + message);
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
