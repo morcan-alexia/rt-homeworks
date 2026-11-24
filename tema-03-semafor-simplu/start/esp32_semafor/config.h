@@ -11,13 +11,12 @@
 // laborator; acasă puneți aici rețeaua voastră sau hotspot-ul telefonului.
 const char* const WIFI_SSID = "iot-demo";
 const char* const WIFI_PASSWORD = "demo123!";
-
 const char* const BROKER_URI = "mqtt://control.aut.utcluj.ro:11188";
 
 // serverul de la care placa ia ora exactă (SNTP), pentru timestamp-uri
 const char* const NTP_SERVER = "pool.ntp.org";
 
-const char* const STUDENT = "popescu-ion";
+const char* const STUDENT = "student_mad";
 
 // ID-ul device-ului, folosit în topic-uri și în mesaje: "esp32-" urmat de
 // ultimele 6 cifre hexa ale adresei MAC a plăcii, de exemplu "esp32-a1b2c3".
